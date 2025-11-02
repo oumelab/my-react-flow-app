@@ -60,7 +60,7 @@ export const connectAtom = atom(null, (_, set, connection: Connection) => {
       {
         ...connection,
         animated: true,
-        style: { stroke: "#f6b93b", strokeWidth: 3 },
+        style: { stroke: "#ccc", strokeWidth: 3 },
       },
       eds
     )
@@ -92,7 +92,7 @@ export const addChildNodeAtom = atom(null, (get, set, parentNode: Node) => {
     source: parentNode.id,
     target: newNodeId,
     animated: true,
-    style: { stroke: "#f6b93b", strokeWidth: 3 },
+    style: { stroke: "#ccc", strokeWidth: 3 },
   };
 
   set(edgesAtom, [...get(edgesAtom), newEdge]);

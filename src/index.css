@@ -132,16 +132,16 @@
 @keyframes pulse-subtle {
   0% {
     transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+    box-shadow: 0 0 0 0 rgba(188, 190, 189, 0.4);
   }
 
   70% {
     transform: scale(1.02);
-    box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+    box-shadow: 0 0 0 10px rgba(174, 184, 181, 0);
   }
 
   100% {
     transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+    box-shadow: 0 0 0 0 rgba(172, 179, 177, 0);
   }
 }

@@ -21,11 +21,11 @@ export const MindMapNode = memo(
             "px-4 py-2 rounded-lg shadow-md transition-all duration-200 min-w-[100px] max-w-[200px]",
             // ノードタイプによるスタイル
             isRoot
-              ? "bg-card-foreground text-white border-4 border-muted-foreground"
+              ? "bg-card-foreground text-background border-2 border-muted-foreground"
               : "bg-background border-2 border-foreground",
             // 選択状態のスタイル
             selected && "animate-pulse-subtle",
-            selected && !isRoot && "bg-emerald-100 border-2 border-emerald-500"
+            selected && !isRoot && "bg-muted border-2"
           )}
         >
           <div className="font-pixel text-center">{data.label}</div>
@@ -35,12 +35,12 @@ export const MindMapNode = memo(
         <Handle
           type="target"
           position={Position.Top}
-          className="w-3 h-3 border-2 border-amber-500 bg-white"
+          className="w-3 h-3 border-2 border-border bg-background"
         />
         <Handle
           type="source"
           position={Position.Bottom}
-          className="w-3 h-3 border-2 border-amber-500 bg-white"
+          className="w-3 h-3 border-2 border-border bg-background"
         />
       </>
     );
