@@ -43,11 +43,26 @@ export function Header() {
   // キーボードショートカット
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // 入力フィールドにフォーカスがある時はショートカットを無効化
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+
       if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
         e.preventDefault();
         undo();
       }
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "z") {
+      // Shiftキー押下時の大文字対応
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        e.shiftKey &&
+        (e.key === "z" || e.key === "Z")
+      ) {
         e.preventDefault();
         redo();
       }
