@@ -20,7 +20,7 @@ const TextBlockCreator = () => {
 
 
   return (
-    <div className="bg-white rounded-lg p-3 border-2">
+    <aside className="bg-white rounded-lg p-3 border-2">
       <h3 className="font-pixel text-sm mb-2 flex items-center">
         <Type className="w-4 h-4 mr-1" /> アイデア
       </h3>
@@ -37,7 +37,7 @@ const TextBlockCreator = () => {
       >
         追加する
       </Button>
-    </div>
+    </aside>
   );
 };
 
@@ -48,6 +48,7 @@ const Instructions = () => (
     <ol className="text-xs space-y-2 list-disc pl-5">
       <li>ブロックをクリックして選択</li>
       <li>ブロックをドラッグして移動</li>
+      <li>Ctrl+Z で操作を戻す、Ctrl+Shift+Z でやり直し</li>
       <li>新規ブロックはサイドバーで作成</li>
       <li>ブロックをつなげてマインドマップを構築しましょう！</li>
       <li>ダブルクリックでズームできます</li>
@@ -60,7 +61,7 @@ export function Sidebar() {
   return (
     <div className="w-64 h-full bg-muted border-l flex flex-col overflow-auto">
       <div className="p-4 border-b">
-        <h2 className="font-pixel text-lg mb-2">
+        <h2 className="font-pixel text-lg">
           新規ブロックを追加
         </h2>
       </div>
