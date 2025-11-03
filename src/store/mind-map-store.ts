@@ -42,9 +42,96 @@ export const edgesAtom = atomWithStorage<Edge[]>("mindmap-edges", initialEdges);
 // 選択中のノードを管理するアトム
 export const selectedNodeAtom = atom<Node | null>(null);
 
+// 履歴の型定義
+type HistoryState = {
+  nodes: Node[];
+  edges: Edge[];
+};
+
+// 履歴管理
+export const historyAtom = atom<{
+  past: HistoryState[];
+  future: HistoryState[];
+}>({
+  past: [],
+  future: [],
+});
+
+// 現在の状態を履歴に保存
+const MAX_HISTORY = 50; // 最大50件
+const saveToHistoryAtom = atom(null, (get, set) => {
+  const currentNodes = get(nodesAtom);
+  const currentEdges = get(edgesAtom);
+  const history = get(historyAtom);
+  
+  const newPast = [...history.past, { nodes: currentNodes, edges: currentEdges }];
+  
+  set(historyAtom, {
+    past: newPast.slice(-MAX_HISTORY), // 上限を超えたら古いものを削除
+    future: [], // 新しい操作で future をクリア
+  });
+});
+
+// Undo
+export const undoAtom = atom(null, (get, set) => {
+  const history = get(historyAtom);
+  
+  if (history.past.length === 0) return;
+  
+  const currentState = {
+    nodes: get(nodesAtom),
+    edges: get(edgesAtom),
+  };
+  
+  const previousState = history.past[history.past.length - 1];
+  const newPast = history.past.slice(0, -1);
+  
+  set(nodesAtom, previousState.nodes);
+  set(edgesAtom, previousState.edges);
+  set(historyAtom, {
+    past: newPast,
+    future: [currentState, ...history.future],
+  });
+});
+
+// Redo
+export const redoAtom = atom(null, (get, set) => {
+  const history = get(historyAtom);
+  
+  if (history.future.length === 0) return;
+  
+  const currentState = {
+    nodes: get(nodesAtom),
+    edges: get(edgesAtom),
+  };
+  
+  const nextState = history.future[0];
+  const newFuture = history.future.slice(1);
+  
+  set(nodesAtom, nextState.nodes);
+  set(edgesAtom, nextState.edges);
+  set(historyAtom, {
+    past: [...history.past, currentState],
+    future: newFuture,
+  });
+});
+
+// Undo/Redo 可能かどうかのアトム
+export const canUndoAtom = atom((get) => get(historyAtom).past.length > 0);
+export const canRedoAtom = atom((get) => get(historyAtom).future.length > 0);
+
 
 // ノードを更新するアトム ... 変更があったノードを更新
 export const nodesChangeAtom = atom(null, (get, set, changes: NodeChange[]) => {
+  // ドラッグ終了を検出
+  const hasDragEnd = changes.some(
+    (c) => c.type === 'position' && 'dragging' in c && c.dragging === false
+  );
+  
+  if (hasDragEnd) {
+    set(saveToHistoryAtom);
+  }
+
   set(nodesAtom, applyNodeChanges(changes, get(nodesAtom))); // applyNodeChanges = React Flow の関数
 });
 
@@ -55,6 +142,7 @@ export const edgesChangeAtom = atom(null, (get, set, changes: EdgeChange[]) => {
 
 // ノード接続のアトム
 export const connectAtom = atom(null, (_, set, connection: Connection) => {
+  set(saveToHistoryAtom); // 履歴に保存
   set(edgesAtom, (eds) =>
     addEdge( // addEdge = React Flow の関数（何と何が繋がれたか取得）
       {
@@ -69,6 +157,8 @@ export const connectAtom = atom(null, (_, set, connection: Connection) => {
 
 // 子ノードを追加するアトム
 export const addChildNodeAtom = atom(null, (get, set, parentNode: Node) => {
+  set(saveToHistoryAtom); // 履歴に保存
+
   const nodes = get(nodesAtom);
   const newNodeId = `node_${nodes.length + 1}`; // id はユニークなもの
   const parentPosition = parentNode.position; // 親ノードのポジションを基準に配置
@@ -102,6 +192,8 @@ export const addChildNodeAtom = atom(null, (get, set, parentNode: Node) => {
 export const updateNodeLabelAtom = atom(
   null,
   (get, set, { nodeId, newLabel }: { nodeId: string; newLabel: string }) => {
+    set(saveToHistoryAtom); // 履歴に保存
+
     set(
       nodesAtom,
       get(nodesAtom).map((node) => {
@@ -125,6 +217,8 @@ export const deleteNodeAtom = atom(null, (get, set, nodeId: string) => {
   // ルートノードの削除を許可しない
   if (nodeId === "root") return;
 
+  set(saveToHistoryAtom); // 履歴に保存
+
   set(
     nodesAtom,
     get(nodesAtom).filter((node) => node.id !== nodeId)
@@ -139,6 +233,8 @@ export const deleteNodeAtom = atom(null, (get, set, nodeId: string) => {
 
 // テキストブロックを追加するアトム
 export const addTextBlockAtom = atom(null, (get, set, text: string) => {
+  set(saveToHistoryAtom); // 履歴に保存
+
   const nodes = get(nodesAtom);
   const newNodeId = `node_${nodes.length + 1}`;
 
@@ -158,6 +254,8 @@ export const addTextBlockAtom = atom(null, (get, set, text: string) => {
 
 // マインドマップをリセットするアトム
 export const resetMindMapAtom = atom(null, (_, set) => {
+  set(saveToHistoryAtom); // 履歴に保存
+
   set(nodesAtom, initialNodes);
   set(edgesAtom, initialEdges);
 });
