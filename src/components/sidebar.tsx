@@ -48,6 +48,7 @@ const Instructions = () => (
     <ol className="text-xs space-y-2 list-disc pl-5">
       <li>ブロックをクリックして選択</li>
       <li>ブロックをドラッグして移動</li>
+      <li>Ctrl+Z で操作を戻す、Ctrl+Shift+Z でやり直し</li>
       <li>新規ブロックはサイドバーで作成</li>
       <li>ブロックをつなげてマインドマップを構築しましょう！</li>
       <li>ダブルクリックでズームできます</li>
