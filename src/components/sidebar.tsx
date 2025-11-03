@@ -20,7 +20,7 @@ const TextBlockCreator = () => {
 
 
   return (
-    <div className="bg-white rounded-lg p-3 border-2">
+    <aside className="bg-white rounded-lg p-3 border-2">
       <h3 className="font-pixel text-sm mb-2 flex items-center">
         <Type className="w-4 h-4 mr-1" /> アイデア
       </h3>
@@ -37,7 +37,7 @@ const TextBlockCreator = () => {
       >
         追加する
       </Button>
-    </div>
+    </aside>
   );
 };
 
