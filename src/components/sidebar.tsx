@@ -60,7 +60,7 @@ export function Sidebar() {
   return (
     <div className="w-64 h-full bg-muted border-l flex flex-col overflow-auto">
       <div className="p-4 border-b">
-        <h2 className="font-pixel text-lg mb-2">
+        <h2 className="font-pixel text-lg">
           新規ブロックを追加
         </h2>
       </div>

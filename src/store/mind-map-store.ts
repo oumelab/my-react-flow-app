@@ -64,7 +64,7 @@ const saveToHistoryAtom = atom(null, (get, set) => {
   const currentEdges = get(edgesAtom);
   const history = get(historyAtom);
   
-  const newPast = [...history.past, { nodes: currentNodes, edges: currentEdges }];
+  const newPast = [...history.past, { nodes: [...currentNodes], edges: [...currentEdges] }];
   
   set(historyAtom, {
     past: newPast.slice(-MAX_HISTORY), // 上限を超えたら古いものを削除
@@ -121,16 +121,40 @@ export const canUndoAtom = atom((get) => get(historyAtom).past.length > 0);
 export const canRedoAtom = atom((get) => get(historyAtom).future.length > 0);
 
 
+// ドラッグ中のノードを追跡
+const draggingNodesAtom = atom<Set<string>>(new Set<string>());
+
 // ノードを更新するアトム ... 変更があったノードを更新
 export const nodesChangeAtom = atom(null, (get, set, changes: NodeChange[]) => {
-  // ドラッグ終了を検出
-  const hasDragEnd = changes.some(
-    (c) => c.type === 'position' && 'dragging' in c && c.dragging === false
+
+  const draggingNodes = get(draggingNodesAtom);
+
+   // ドラッグ開始を検出（dragging=true で、まだ追跡されていないノード）
+   const hasDragStart = changes.some(
+    (c) => c.type === 'position' && 
+           'dragging' in c && 
+           c.dragging === true && 
+           'id' in c && 
+           !draggingNodes.has(c.id)
   );
   
-  if (hasDragEnd) {
+  // ドラッグ開始時に履歴保存（変更前の状態を保存）
+  if (hasDragStart) {
     set(saveToHistoryAtom);
   }
+
+  // ドラッグ状態を更新
+  const newDraggingNodes = new Set(draggingNodes);
+  changes.forEach(c => {
+    if (c.type === 'position' && 'dragging' in c && 'id' in c) {
+      if (c.dragging) {
+        newDraggingNodes.add(c.id);
+      } else {
+        newDraggingNodes.delete(c.id);
+      }
+    }
+  });
+  set(draggingNodesAtom, newDraggingNodes);
 
   set(nodesAtom, applyNodeChanges(changes, get(nodesAtom))); // applyNodeChanges = React Flow の関数
 });
