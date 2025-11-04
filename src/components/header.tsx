@@ -7,7 +7,22 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {Input} from "@/components/ui/input";
+import {
+  exportAtom,
+  importFromJSONAtom,
+  importFromMarkdownAtom,
+} from "@/store/export-import-store";
 import {
   addChildNodeAtom,
   canRedoAtom,
@@ -19,9 +34,14 @@ import {
   undoAtom,
   updateNodeLabelAtom,
 } from "@/store/mind-map-store";
+import {
+  DropdownMenuPortal,
+  DropdownMenuSubContent,
+} from "@radix-ui/react-dropdown-menu";
 import {useAtom} from "jotai";
 import {
   Download,
+  MoreVertical,
   Pen,
   Plus,
   Redo,
@@ -32,17 +52,6 @@ import {
 } from "lucide-react";
 import {useEffect, useRef, useState} from "react";
 import {Separator} from "./ui/separator";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  exportAtom,
-  importFromJSONAtom,
-  importFromMarkdownAtom,
-} from "@/store/export-import-store";
 
 export function Header() {
   const [, undo] = useAtom(undoAtom);
@@ -137,7 +146,7 @@ export function Header() {
   return (
     <header className="bg-muted border-b p-2 flex items-center justify-between">
       <div className="flex items-center">
-        <h1 className="font-pixel text-foreground text-xl font-bold ml-12">
+        <h1 className="font-pixel text-foreground text-xl font-bold ml-4">
           My Mind-Map
         </h1>
       </div>
@@ -193,29 +202,31 @@ export function Header() {
           <Button
             onClick={undo}
             disabled={!canUndo}
-            size="sm"
+            size="icon"
             variant="outline"
           >
             <Undo className="w-4 h-4" />
+            <span className="sr-only">元に戻す</span>
           </Button>
           <Button
             onClick={redo}
             disabled={!canRedo}
-            size="sm"
+            size="icon"
             variant="outline"
           >
             <Redo className="w-4 h-4" />
+            <span className="sr-only">やり直す</span>
           </Button>
         </div>
-        <div className="px-2">
+        <div className="px-1">
           <Separator orientation="vertical" />
         </div>
         <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
           <DialogTrigger asChild>
             <Button
               variant="outline"
-              size="sm"
-              className="font-pixel text-xs flex items-center gap-1"
+              disabled={!canUndo}
+              className="font-pixel flex items-center gap-1"
             >
               すべてリセット
               <RefreshCw className="w-4 h-4" />
@@ -234,51 +245,88 @@ export function Header() {
             </Button>
           </DialogContent>
         </Dialog>
-      </div>
-      <div className="flex gap-2">
-        {/* エクスポート */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm">
-              エクスポート
-              <Download className="w-4 h-4 ml-1" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuItem onClick={() => exportData("json")}>
-              JSON 形式
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => exportData("markdown")}>
-              Markdown 形式
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
 
-        {/* インポート */}
+        {/* その他メニュー */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm">
-              インポート
-              <Upload className="w-4 h-4 ml-1" />
+            <Button
+              variant="ghost"
+              size="icon"
+              className="hover:bg-popover data-[state=open]:bg-popover"
+            >
+              <MoreVertical className="w-4 h-4" />
+              <span className="sr-only">その他のメニュー</span>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuItem
-              onClick={() => {
-                setImportFormat("json");
-                fileInputRef.current?.click();
-              }}
-            >
-              JSON 形式
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => {
-                setImportFormat("markdown");
-                fileInputRef.current?.click();
-              }}
-            >
-              Markdown 形式
-            </DropdownMenuItem>
+          <DropdownMenuContent
+            align="end"
+            sideOffset={4}
+            side="bottom"
+            alignOffset={0}
+          >
+            {/* エクスポート */}
+            <DropdownMenuGroup>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger className="gap-6">
+                  <span className="flex gap-2 items-center">
+                    <Download className="size-4" />
+                    エクスポート
+                  </span>
+                </DropdownMenuSubTrigger>
+                <DropdownMenuPortal>
+                  <DropdownMenuSubContent
+                    className="z-60 bg-popover text-popover-foreground border rounded-md p-1 shadow-md"
+                    sideOffset={4}
+                    alignOffset={-4}
+                  >
+                    <DropdownMenuItem onClick={() => exportData("json")}>
+                      JSON 形式
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => exportData("markdown")}>
+                      Markdown 形式
+                    </DropdownMenuItem>
+                  </DropdownMenuSubContent>
+                </DropdownMenuPortal>
+              </DropdownMenuSub>
+            </DropdownMenuGroup>
+
+            <DropdownMenuSeparator />
+
+            {/* インポート */}
+            <DropdownMenuGroup>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger className="gap-6">
+                  <span className="flex gap-2 items-center">
+                    <Upload className="size-4" />
+                    インポート
+                  </span>
+                </DropdownMenuSubTrigger>
+                <DropdownMenuPortal>
+                  <DropdownMenuSubContent
+                    className="z-60 bg-popover text-popover-foreground border rounded-md p-1 shadow-md"
+                    sideOffset={4}
+                    alignOffset={-4}
+                  >
+                    <DropdownMenuItem
+                      onClick={() => {
+                        setImportFormat("json");
+                        fileInputRef.current?.click();
+                      }}
+                    >
+                      JSON 形式
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        setImportFormat("markdown");
+                        fileInputRef.current?.click();
+                      }}
+                    >
+                      Markdown 形式
+                    </DropdownMenuItem>
+                  </DropdownMenuSubContent>
+                </DropdownMenuPortal>
+              </DropdownMenuSub>
+            </DropdownMenuGroup>
           </DropdownMenuContent>
         </DropdownMenu>
 
