@@ -278,8 +278,13 @@ export const addTextBlockAtom = atom(null, (get, set, text: string) => {
 
 // マインドマップをリセットするアトム
 export const resetMindMapAtom = atom(null, (_, set) => {
-  set(saveToHistoryAtom); // 履歴に保存
+  // 履歴を保存せず、履歴もクリア
+  set(historyAtom, {
+    past: [],
+    future: [],
+  });
 
   set(nodesAtom, initialNodes);
   set(edgesAtom, initialEdges);
+  set(selectedNodeAtom, null); // 選択状態もクリア
 });
