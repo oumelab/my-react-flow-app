@@ -1,73 +1,61 @@
-# React + TypeScript + Vite
+# Simple Mind-Map
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React Flow と Joatai を使用したシンプルなマインドマップアプリケーションです。<br />
+[React Road](https://react-road.b13o.com) の学習課題 [マインドマップアプリ](https://react-road.b13o.com/challenges/orange-mimdmap)に挑戦させていただいたものに独自機能を追加しました。
 
-Currently, two official plugins are available:
+> [!NOTE]
+> このリポジトリは、個人的な学習およびデモンストレーションの目的のみに使用されます。<br />
+> This repository is for personal learning and demonstration purposes only.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 機能
 
-## React Compiler
+- ノードの追加・編集・削除
+- ノード間の接続
+- ドラッグ&ドロップで自由に配置
+- ローカルストレージに自動保存
+- Undo/Redo機能（最大50回）#1
 
-The React Compiler is currently not compatible with SWC. See [this issue](https://github.com/vitejs/vite-plugin-react/issues/428) for tracking the progress.
+## 技術スタック
 
-## Expanding the ESLint configuration
+- React 19.1.1
+- TypeScript 5.9.3
+- Vite 7.1.7
+- React Flow 12.9.2
+- Jotai (状態管理)
+- Tailwind CSS 4.1.16
+- shadcn/ui
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## セットアップ
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+このプロジェクトは [pnpm](https://pnpm.io/) を使用しています。
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+```bash
+npm install -g pnpm
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# リポジトリをクローン
+git clone https://github.com/your-username/your-repo-name.git
+cd your-repo-name
+
+# 依存関係をインストール
+pnpm install
+
+# 開発サーバーを起動
+pnpm dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 使い方
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+1. **ノードを選択** - ノードをクリックして選択
+2. **子ノードを追加** - 選択後、ヘッダーの「子要素の追加」ボタン
+3. **ノードを編集** - 「編集」ボタンでラベルを変更
+4. **ノードを削除** - 「削除」ボタンで削除
+5. **Undo/Redo** - `Ctrl+Z` / `Ctrl+Shift+Z` (Mac: `Cmd+Z` / `Cmd+Shift+Z`)
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## ビルド
+```bash
+pnpm build
 ```
+
+## 追加予定の機能
+- [x] Undo/Redo 機能 #1
+- [ ] インポート/エクスポート機能 #2
