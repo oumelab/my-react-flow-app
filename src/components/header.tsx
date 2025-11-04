@@ -20,9 +20,29 @@ import {
   updateNodeLabelAtom,
 } from "@/store/mind-map-store";
 import {useAtom} from "jotai";
-import {Pen, Plus, Redo, RefreshCw, Trash, Undo} from "lucide-react";
-import {useEffect, useState} from "react";
+import {
+  Download,
+  Pen,
+  Plus,
+  Redo,
+  RefreshCw,
+  Trash,
+  Undo,
+  Upload,
+} from "lucide-react";
+import {useEffect, useRef, useState} from "react";
 import {Separator} from "./ui/separator";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  exportAtom,
+  importFromJSONAtom,
+  importFromMarkdownAtom,
+} from "@/store/export-import-store";
 
 export function Header() {
   const [, undo] = useAtom(undoAtom);
@@ -39,6 +59,14 @@ export function Header() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
   const [newLabel, setNewLabel] = useState("");
+
+  const [, exportData] = useAtom(exportAtom);
+  const [, importJSON] = useAtom(importFromJSONAtom);
+  const [, importMarkdown] = useAtom(importFromMarkdownAtom);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [importFormat, setImportFormat] = useState<"json" | "markdown">("json");
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+  const [pendingImportFile, setPendingImportFile] = useState<File | null>(null);
 
   // キーボードショートカット
   useEffect(() => {
@@ -77,6 +105,33 @@ export function Header() {
       updateNodeLabel({nodeId: selectedNode.id, newLabel});
     }
     setIsEditDialogOpen(false);
+  };
+
+  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // 確認ダイアログを表示
+    setPendingImportFile(file);
+    setIsImportDialogOpen(true);
+
+    // input をリセット
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const confirmImport = () => {
+    if (!pendingImportFile) return;
+
+    if (importFormat === "json") {
+      importJSON(pendingImportFile);
+    } else {
+      importMarkdown(pendingImportFile);
+    }
+
+    setIsImportDialogOpen(false);
+    setPendingImportFile(null);
   };
 
   return (
@@ -177,6 +232,79 @@ export function Header() {
             >
               削除
             </Button>
+          </DialogContent>
+        </Dialog>
+      </div>
+      <div className="flex gap-2">
+        {/* エクスポート */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm">
+              エクスポート
+              <Download className="w-4 h-4 ml-1" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem onClick={() => exportData("json")}>
+              JSON 形式
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => exportData("markdown")}>
+              Markdown 形式
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {/* インポート */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm">
+              インポート
+              <Upload className="w-4 h-4 ml-1" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem
+              onClick={() => {
+                setImportFormat("json");
+                fileInputRef.current?.click();
+              }}
+            >
+              JSON 形式
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                setImportFormat("markdown");
+                fileInputRef.current?.click();
+              }}
+            >
+              Markdown 形式
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".json,.md"
+          onChange={handleImport}
+          className="hidden"
+        />
+        {/* インポート確認ダイアログ（リセットダイアログの近くに追加） */}
+        <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
+          <DialogContent className="sm:max-w-[425px] space-y-2">
+            <DialogTitle>データをインポート</DialogTitle>
+            <DialogDescription>
+              既存のマインドマップが上書きされます。よろしいですか？
+            </DialogDescription>
+            <div className="flex gap-2 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => setIsImportDialogOpen(false)}
+              >
+                キャンセル
+              </Button>
+              <Button onClick={confirmImport}>インポート</Button>
+            </div>
           </DialogContent>
         </Dialog>
       </div>
