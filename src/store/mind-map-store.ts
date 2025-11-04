@@ -59,7 +59,7 @@ export const historyAtom = atom<{
 
 // 現在の状態を履歴に保存
 const MAX_HISTORY = 50; // 最大50件
-const saveToHistoryAtom = atom(null, (get, set) => {
+export const saveToHistoryAtom = atom(null, (get, set) => {
   const currentNodes = get(nodesAtom);
   const currentEdges = get(edgesAtom);
   const history = get(historyAtom);
