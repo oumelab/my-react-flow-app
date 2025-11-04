@@ -87,17 +87,38 @@ export const exportAtom = atom(null, (_, set, format: ExportFormat) => {
 
 // JSON インポート
 export const importFromJSONAtom = atom(null, (_, set, file: File) => {
+  // ファイル拡張子をチェック
+  if (!file.name.endsWith(".json")) {
+    alert("JSON形式のファイルを選択してください");
+    return;
+  }
+
   const reader = new FileReader();
   reader.onload = (e) => {
     try {
       // インポート前に履歴保存
       set(saveToHistoryAtom);
+
       const result = e.target?.result as string;
       const data = JSON.parse(result);
 
-      // バリデーション
+      // バリデーション強化
       if (!data.nodes || !data.edges) {
         throw new Error("Invalid JSON format");
+      }
+
+      // 配列かどうかチェック
+      if (!Array.isArray(data.nodes) || !Array.isArray(data.edges)) {
+        throw new Error("Invalid JSON format: nodes and edges must be arrays");
+      }
+
+      // 必須プロパティのチェック
+      if (
+        data.nodes.some((node: Node) => !node.id || !node.data || !node.position)
+      ) {
+        throw new Error(
+          "Invalid JSON format: nodes must have id, data, and position"
+        );
       }
 
       set(nodesAtom, data.nodes);
@@ -105,14 +126,23 @@ export const importFromJSONAtom = atom(null, (_, set, file: File) => {
       set(selectedNodeAtom, null);
     } catch (error) {
       console.error("Import error:", error);
-      alert("ファイルの読み込みに失敗しました");
+      alert(
+        "ファイルの読み込みに失敗しました。正しいJSON形式のファイルを選択してください。"
+      );
     }
   };
   reader.readAsText(file);
 });
 
 // Markdown インポート
-export const importFromMarkdownAtom = atom(null, (_, set, file: File) => {
+export const importFromMarkdownAtom = atom(
+  null, (_, set, file: File) => {
+  // ファイル拡張子をチェック
+  if (!file.name.endsWith('.md') && !file.name.endsWith('.markdown')) {
+    alert('Markdown形式のファイルを選択してください');
+    return;
+  }
+
   const reader = new FileReader();
   reader.onload = (e) => {
     try {
@@ -120,7 +150,15 @@ export const importFromMarkdownAtom = atom(null, (_, set, file: File) => {
       set(saveToHistoryAtom);
 
       const result = e.target?.result as string;
-      const lines = result.split("\n").filter((line) => line.trim());
+
+      // 空ファイルチェック
+      if (!result.trim()) {
+        throw new Error('Empty markdown file');
+      }
+
+      // タブを2スペースに変換（一貫したインデント処理のため）
+      const normalizedResult = result.replace(/\t/g, '  ');
+      const lines = normalizedResult .split("\n").filter((line) => line.trim());
 
       const newNodes: Node[] = [];
       const newEdges: Edge[] = [];
@@ -167,12 +205,17 @@ export const importFromMarkdownAtom = atom(null, (_, set, file: File) => {
         nodeId++;
       });
 
+      // 有効なノードが1つも見つからなかったらエラー
+      if (newNodes.length === 0) {
+        throw new Error('No valid nodes found in Markdown file');
+      }
+
       set(nodesAtom, newNodes);
       set(edgesAtom, newEdges);
       set(selectedNodeAtom, null);
     } catch (error) {
       console.error("Import error:", error);
-      alert("ファイルの読み込みに失敗しました");
+      alert("ファイルの読み込みに失敗しました。正しいMarkdown形式のファイルを選択してください。");
     }
   };
   reader.readAsText(file);

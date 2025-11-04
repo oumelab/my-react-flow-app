@@ -12,8 +12,10 @@ import {
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
+  DropdownMenuPortal,
   DropdownMenuSeparator,
   DropdownMenuSub,
+  DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -34,10 +36,6 @@ import {
   undoAtom,
   updateNodeLabelAtom,
 } from "@/store/mind-map-store";
-import {
-  DropdownMenuPortal,
-  DropdownMenuSubContent,
-} from "@radix-ui/react-dropdown-menu";
 import {useAtom} from "jotai";
 import {
   Download,
@@ -333,7 +331,7 @@ export function Header() {
         <input
           ref={fileInputRef}
           type="file"
-          accept=".json,.md"
+          accept=".json,.md,.markdown"
           onChange={handleImport}
           className="hidden"
         />
