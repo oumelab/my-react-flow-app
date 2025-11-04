@@ -31,7 +31,7 @@ function App() {
     <>
       <div className="md:hidden flex items-center justify-center h-screen p-4 bg-muted">
         <div className="text-center space-y-4">
-          <h2 className="text-xl font-bold">My Mind-Map</h2>
+          <h2 className="text-xl font-bold">Simple Mind-Map</h2>
           <p className="text-sm text-muted-foreground">
             このアプリはタブレット以上の画面サイズでご利用ください
           </p>
