@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
+import { Kbd, KbdGroup } from "@/components/ui/kbd"
 import { Type } from "lucide-react";
 import { addTextBlockAtom } from "@/store/mind-map-store";
 import { useAtom } from "jotai";
@@ -48,8 +49,19 @@ const Instructions = () => (
     <ol className="text-xs space-y-2 list-disc pl-5">
       <li>ブロックをクリックして選択</li>
       <li>ブロックをドラッグして移動</li>
-      <li>Ctrl+Z で操作を戻す、Ctrl+Shift+Z でやり直し</li>
       <li>新規ブロックはサイドバーで作成</li>
+      <li><KbdGroup>
+        <Kbd>Ctrl</Kbd>
+        <span>+</span>
+        <Kbd>Z</Kbd>
+      </KbdGroup> で操作を戻す</li>
+        <li><KbdGroup>
+        <Kbd>Ctrl</Kbd>
+        <span>+</span>
+        <Kbd>Shift</Kbd>
+        <span>+</span>
+        <Kbd>Z</Kbd>
+      </KbdGroup> でやり直し</li>
       <li>ブロックをつなげてマインドマップを構築しましょう！</li>
       <li>ダブルクリックでズームできます</li>
     </ol>
