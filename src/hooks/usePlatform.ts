@@ -5,7 +5,7 @@ export function usePlatform() {
   const isMac = useMemo(
     () =>
       typeof navigator !== "undefined" &&
-      /(Mac|iPad|Macintosh)/i.test(navigator.userAgent),
+      /(Mac|iPad)/i.test(navigator.userAgent),
     []
   );
   const modKey = isMac ? "⌘" : "Ctrl";
