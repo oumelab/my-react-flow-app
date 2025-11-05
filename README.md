@@ -57,6 +57,7 @@ pnpm dev
 pnpm build
 ```
 
-## 追加予定の機能
+## 追加予定の機能など
 - [x] Undo/Redo 機能 [#1](https://github.com/oumelab/my-react-flow-app/issues/1)
 - [x] インポート/エクスポート機能 [#2](https://github.com/oumelab/my-react-flow-app/issues/2)
+- [x] Header コンポーネントのロジックをカスタムフックに分離（useHeaderActions / useImportExport）
