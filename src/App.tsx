@@ -1,15 +1,15 @@
-import {ReactFlow, Background, Controls, MiniMap} from "@xyflow/react";
+import { Background, Controls, MiniMap, ReactFlow } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import {MindMapNode} from "./components/mind-map-node";
-import {Sidebar} from "./components/sidebar";
-import {Header} from "./components/header";
-import {useAtom} from "jotai";
+import { useAtom } from "jotai";
+import { Header } from "./components/header";
+import { MindMapNode } from "./components/mind-map-node";
+import { Sidebar } from "./components/sidebar";
 import {
-  nodesAtom,
-  edgesAtom,
-  nodesChangeAtom,
-  edgesChangeAtom,
   connectAtom,
+  edgesAtom,
+  edgesChangeAtom,
+  nodesAtom,
+  nodesChangeAtom,
   selectedNodeAtom,
 } from "./store/mind-map-store";
 
@@ -40,7 +40,7 @@ function App() {
       <div className="hidden md:flex flex-col h-screen">
         <Header />
         <div className="flex flex-1 overflow-hidden">
-          <main className="flex-1 h-full bg-[url('/grass-texture.png')] bg-repeat">
+          <main className="flex-1 h-full">
             <ReactFlow
               nodes={nodes}
               edges={edges}
@@ -65,7 +65,7 @@ function App() {
               onPaneClick={() => setSelectedNode(null)}
               proOptions={{hideAttribution: true}}
             >
-              <Background color="#a1a1aa" gap={16} size={1} />
+              <Background />
               <Controls className="p-1 rounded-md border-2 border-muted-foreground" />
               <MiniMap
                 nodeColor={(n) => {
