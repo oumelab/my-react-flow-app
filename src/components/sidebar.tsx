@@ -6,11 +6,14 @@ import {Kbd, KbdGroup} from "@/components/ui/kbd";
 import {Type} from "lucide-react";
 import {addTextBlockAtom} from "@/store/mind-map-store";
 import {useAtom} from "jotai";
+import {usePlatform} from "@/hooks/usePlatform";
 
 // テキストブロック作成コンポーネント
 const TextBlockCreator = () => {
   const [text, setText] = useState<string>("");
   const [, onAddBlock] = useAtom(addTextBlockAtom);
+
+  const {modKey, modKeyName} = usePlatform();
 
   const handleAddTextBlock = () => {
     if (text.trim()) {
@@ -24,60 +27,88 @@ const TextBlockCreator = () => {
       <h3 className="font-pixel text-sm mb-2 flex items-center">
         <Type className="w-4 h-4 mr-1" /> アイデア
       </h3>
-      <Textarea
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        placeholder="ideas here..."
-        className="border-2 h-20 text-sm mb-2 font-pixel"
-      />
-      <Button
-        onClick={handleAddTextBlock}
-        className="w-full font-pixel text-xs"
-        disabled={!text.trim()}
+      <form
+        onSubmit={(e) => {
+          e.preventDefault(); // ページリロード防止
+          handleAddTextBlock();
+        }}
       >
-        追加する
-      </Button>
+        <label htmlFor="newIdea" className="sr-only">
+          新しいアイデアを入力
+        </label>
+        <Textarea
+          id="newIdea"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder="ideas here..."
+          className="border-2 h-20 text-sm mb-2 font-pixel"
+          onKeyDown={(e) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+              e.preventDefault();
+              handleAddTextBlock();
+            }
+          }}
+        />
+
+        <Button
+          type="submit"
+          className="w-full font-pixel text-xs"
+          disabled={!text.trim()}
+        >
+          追加する
+          <KbdGroup>
+            <Kbd
+              aria-label={modKeyName}
+              className="bg-inherit border border-muted-foreground"
+            >
+              {modKey}
+            </Kbd>
+            <Kbd
+              aria-label="エンターキー"
+              className="bg-inherit border border-muted-foreground"
+            >
+              ⏎
+            </Kbd>
+          </KbdGroup>
+        </Button>
+      </form>
     </aside>
   );
 };
 
 // 使い方コンポーネント
 const Instructions = () => {
-    // ショートカットキー（Mac, iPad なら ⌘ , それ以外は Ctrl)
-    const isMac =
-    typeof navigator !== "undefined" && /Mac|iPad/.test(navigator.platform);
-  const modKey = isMac ? "⌘" : "Ctrl";
-  return(
-
-  <div className="bg-background rounded-lg p-3 border-2">
-    <h3 className="font-pixel text-sm mb-2">使い方</h3>
-    <ol className="text-xs space-y-2 list-disc pl-5">
-      <li>ブロックをクリックして選択</li>
-      <li>ブロックをドラッグして移動</li>
-      <li>新規ブロックはサイドバーで作成</li>
-      <li>
-        <KbdGroup>
-          <Kbd>{modKey}</Kbd>
-          <span>+</span>
-          <Kbd>Z</Kbd>
-        </KbdGroup>{" "}
-        で操作を戻す
-      </li>
-      <li>
-        <KbdGroup>
-          <Kbd>{modKey}</Kbd>
-          <span>+</span>
-          <Kbd>Shift</Kbd>
-          <span>+</span>
-          <Kbd>Z</Kbd>
-        </KbdGroup>{" "}
-        でやり直し
-      </li>
-      <li>ブロックをつなげてマインドマップを構築しましょう！</li>
-      <li>ダブルクリックでズームできます</li>
-    </ol>
-  </div>
-  )
+  const {modKey, modKeyName} = usePlatform();
+  return (
+    <div className="bg-background rounded-lg p-3 border-2">
+      <h3 className="font-pixel text-sm mb-2">使い方</h3>
+      <ol className="text-xs space-y-2 list-disc pl-5">
+        <li>ブロックをクリックして選択</li>
+        <li>ブロックをドラッグして移動</li>
+        <li>新規ブロックはサイドバーで作成</li>
+        <li>
+          <KbdGroup>
+            <Kbd aria-label={modKeyName}>{modKey}</Kbd>
+            <span>+</span>
+            <Kbd aria-label="Zキー">Z</Kbd>
+          </KbdGroup>{" "}
+          で操作を戻す
+        </li>
+        <li>
+          <KbdGroup>
+            <Kbd aria-label={modKeyName}>{modKey}</Kbd>
+            <span>+</span>
+            <Kbd aria-label="シフトキー">Shift</Kbd>
+            <span>+</span>
+            <Kbd aria-label="Zキー">Z</Kbd>
+          </KbdGroup>{" "}
+          でやり直し
+        </li>
+        <li>ブロックをつなげてマインドマップを構築しましょう！</li>
+        <li>ダブルクリックでズームできます</li>
+      </ol>
+    </div>
+  );
 };
 
 // メインのサイドバーコンポーネント
