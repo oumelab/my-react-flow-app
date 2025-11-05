@@ -1,144 +1,45 @@
-import {Button} from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuPortal,
-  DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {Input} from "@/components/ui/input";
-import {
-  exportAtom,
-  importFromJSONAtom,
-  importFromMarkdownAtom,
-} from "@/store/export-import-store";
-import {
-  addChildNodeAtom,
-  canRedoAtom,
-  canUndoAtom,
-  deleteNodeAtom,
-  redoAtom,
-  resetMindMapAtom,
-  selectedNodeAtom,
-  undoAtom,
-  updateNodeLabelAtom,
-} from "@/store/mind-map-store";
-import {useAtom} from "jotai";
-import {
-  Download,
-  MoreVertical,
-  Pen,
-  Plus,
-  Redo,
-  RefreshCw,
-  Trash,
-  Undo,
-  Upload,
-} from "lucide-react";
-import {useEffect, useRef, useState} from "react";
-import {Separator} from "./ui/separator";
+import { Download, MoreVertical, Pen, Plus, Redo, RefreshCw, Trash, Undo, Upload } from "lucide-react";
+import { Button } from "./ui/button";
+import { useState } from "react";
+import { useImportExport } from "@/hooks/useImportExport";
+import { useHeaderActions } from "@/hooks/useHeaderActions";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
+import { Input } from "./ui/input";
+import { Separator } from "./ui/separator";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuPortal, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from "./ui/dropdown-menu";
 
 export function Header() {
-  const [, undo] = useAtom(undoAtom);
-  const [, redo] = useAtom(redoAtom);
-  const [canUndo] = useAtom(canUndoAtom);
-  const [canRedo] = useAtom(canRedoAtom);
+  const {
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+    selectedNode,
+    addChildNode,
+    updateNodeLabel,
+    deleteNode,
+    resetMindMap,
+  } = useHeaderActions();
 
-  const [selectedNode] = useAtom(selectedNodeAtom);
-  const [, addChildNode] = useAtom(addChildNodeAtom);
-  const [, updateNodeLabel] = useAtom(updateNodeLabelAtom);
-  const [, deleteNode] = useAtom(deleteNodeAtom);
-  const [, resetMindMap] = useAtom(resetMindMapAtom);
+  const {
+    exportData,
+    fileInputRef,
+    setImportFormat,
+    isImportDialogOpen,
+    setIsImportDialogOpen,
+    handleImport,
+    confirmImport,
+  } = useImportExport();
 
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
   const [newLabel, setNewLabel] = useState("");
 
-  const [, exportData] = useAtom(exportAtom);
-  const [, importJSON] = useAtom(importFromJSONAtom);
-  const [, importMarkdown] = useAtom(importFromMarkdownAtom);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [importFormat, setImportFormat] = useState<"json" | "markdown">("json");
-  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
-  const [pendingImportFile, setPendingImportFile] = useState<File | null>(null);
-
-  // キーボードショートカット
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // 入力フィールドにフォーカスがある時はショートカットを無効化
-      const target = e.target as HTMLElement;
-      if (
-        target.tagName === "INPUT" ||
-        target.tagName === "TEXTAREA" ||
-        target.isContentEditable
-      ) {
-        return;
-      }
-
-      if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
-        e.preventDefault();
-        undo();
-      }
-      // Shiftキー押下時の大文字対応
-      if (
-        (e.ctrlKey || e.metaKey) &&
-        e.shiftKey &&
-        (e.key === "z" || e.key === "Z")
-      ) {
-        e.preventDefault();
-        redo();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [undo, redo]);
-
   const handleUpdateLabel = () => {
     if (selectedNode && newLabel.trim()) {
-      updateNodeLabel({nodeId: selectedNode.id, newLabel});
+      updateNodeLabel({ nodeId: selectedNode.id, newLabel });
     }
     setIsEditDialogOpen(false);
-  };
-
-  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // 確認ダイアログを表示
-    setPendingImportFile(file);
-    setIsImportDialogOpen(true);
-
-    // input をリセット
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
-
-  const confirmImport = () => {
-    if (!pendingImportFile) return;
-
-    if (importFormat === "json") {
-      importJSON(pendingImportFile);
-    } else {
-      importMarkdown(pendingImportFile);
-    }
-
-    setIsImportDialogOpen(false);
-    setPendingImportFile(null);
   };
 
   return (
