@@ -21,7 +21,7 @@ const TextBlockCreator = () => {
 
 
   return (
-    <aside className="bg-white rounded-lg p-3 border-2">
+    <aside className="bg-background rounded-lg p-3 border-2">
       <h3 className="font-pixel text-sm mb-2 flex items-center">
         <Type className="w-4 h-4 mr-1" /> アイデア
       </h3>
@@ -44,7 +44,7 @@ const TextBlockCreator = () => {
 
 // 使い方コンポーネント
 const Instructions = () => (
-  <div className="bg-white rounded-lg p-3 border-2">
+  <div className="bg-background rounded-lg p-3 border-2">
     <h3 className="font-pixel text-sm mb-2">使い方</h3>
     <ol className="text-xs space-y-2 list-disc pl-5">
       <li>ブロックをクリックして選択</li>
