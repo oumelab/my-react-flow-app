@@ -43,10 +43,10 @@ export function Header() {
   };
 
   return (
-    <header className="bg-muted border-b p-2 flex items-center justify-between">
+    <header className="bg-muted border-b p-2 flex items-center gap-2 justify-between">
       <div className="flex items-center">
         <h1 className="font-pixel text-foreground text-xl font-bold ml-4">
-          My Mind-Map
+          Simple Mind-Map
         </h1>
       </div>
 
