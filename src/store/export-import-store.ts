@@ -88,7 +88,7 @@ export const exportAtom = atom(null, (_, set, format: ExportFormat) => {
 // JSON インポート
 export const importFromJSONAtom = atom(null, (_, set, file: File) => {
   // ファイル拡張子をチェック
-  if (!file.name.endsWith(".json")) {
+  if (!file.name.toLowerCase().endsWith(".json")) {
     alert("JSON形式のファイルを選択してください");
     return;
   }
@@ -138,7 +138,8 @@ export const importFromJSONAtom = atom(null, (_, set, file: File) => {
 export const importFromMarkdownAtom = atom(
   null, (_, set, file: File) => {
   // ファイル拡張子をチェック
-  if (!file.name.endsWith('.md') && !file.name.endsWith('.markdown')) {
+const lowerName = file.name.toLowerCase();
+if (!lowerName.endsWith('.md') && !lowerName.endsWith('.markdown')) {
     alert('Markdown形式のファイルを選択してください');
     return;
   }

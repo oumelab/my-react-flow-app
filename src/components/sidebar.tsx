@@ -1,11 +1,11 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Separator } from "@/components/ui/separator";
-import { Kbd, KbdGroup } from "@/components/ui/kbd"
-import { Type } from "lucide-react";
-import { addTextBlockAtom } from "@/store/mind-map-store";
-import { useAtom } from "jotai";
+import {useState} from "react";
+import {Button} from "@/components/ui/button";
+import {Textarea} from "@/components/ui/textarea";
+import {Separator} from "@/components/ui/separator";
+import {Kbd, KbdGroup} from "@/components/ui/kbd";
+import {Type} from "lucide-react";
+import {addTextBlockAtom} from "@/store/mind-map-store";
+import {useAtom} from "jotai";
 
 // テキストブロック作成コンポーネント
 const TextBlockCreator = () => {
@@ -18,7 +18,6 @@ const TextBlockCreator = () => {
       setText("");
     }
   };
-
 
   return (
     <aside className="bg-background rounded-lg p-3 border-2">
@@ -43,39 +42,50 @@ const TextBlockCreator = () => {
 };
 
 // 使い方コンポーネント
-const Instructions = () => (
+const Instructions = () => {
+    // ショートカットキー（Mac, iPad なら ⌘ , それ以外は Ctrl)
+    const isMac =
+    typeof navigator !== "undefined" && /Mac|iPad/.test(navigator.platform);
+  const modKey = isMac ? "⌘" : "Ctrl";
+  return(
+
   <div className="bg-background rounded-lg p-3 border-2">
     <h3 className="font-pixel text-sm mb-2">使い方</h3>
     <ol className="text-xs space-y-2 list-disc pl-5">
       <li>ブロックをクリックして選択</li>
       <li>ブロックをドラッグして移動</li>
       <li>新規ブロックはサイドバーで作成</li>
-      <li><KbdGroup>
-        <Kbd>Ctrl</Kbd>
-        <span>+</span>
-        <Kbd>Z</Kbd>
-      </KbdGroup> で操作を戻す</li>
-        <li><KbdGroup>
-        <Kbd>Ctrl</Kbd>
-        <span>+</span>
-        <Kbd>Shift</Kbd>
-        <span>+</span>
-        <Kbd>Z</Kbd>
-      </KbdGroup> でやり直し</li>
+      <li>
+        <KbdGroup>
+          <Kbd>{modKey}</Kbd>
+          <span>+</span>
+          <Kbd>Z</Kbd>
+        </KbdGroup>{" "}
+        で操作を戻す
+      </li>
+      <li>
+        <KbdGroup>
+          <Kbd>{modKey}</Kbd>
+          <span>+</span>
+          <Kbd>Shift</Kbd>
+          <span>+</span>
+          <Kbd>Z</Kbd>
+        </KbdGroup>{" "}
+        でやり直し
+      </li>
       <li>ブロックをつなげてマインドマップを構築しましょう！</li>
       <li>ダブルクリックでズームできます</li>
     </ol>
   </div>
-);
+  )
+};
 
 // メインのサイドバーコンポーネント
 export function Sidebar() {
   return (
     <div className="w-64 h-full bg-muted border-l flex flex-col overflow-auto">
       <div className="p-4 border-b">
-        <h2 className="font-pixel text-lg">
-          新規ブロックを追加
-        </h2>
+        <h2 className="font-pixel text-lg">新規ブロックを追加</h2>
       </div>
 
       <div className="p-4 flex flex-col gap-4">
