@@ -1,5 +1,4 @@
 import { Background, Controls, MiniMap, ReactFlow } from "@xyflow/react";
-import "@xyflow/react/dist/style.css";
 import { useAtom } from "jotai";
 import { Header } from "./components/header";
 import { MindMapNode } from "./components/mind-map-node";
@@ -62,6 +61,7 @@ function App() {
                   position: node.position,
                 });
               }}
+              colorMode="light"
               onPaneClick={() => setSelectedNode(null)}
               proOptions={{hideAttribution: true}}
             >
