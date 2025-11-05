@@ -124,7 +124,6 @@ export function Header() {
           <DialogTrigger asChild>
             <Button
               variant="outline"
-              disabled={!canUndo}
               className="font-pixel flex items-center gap-1"
             >
               すべてリセット
