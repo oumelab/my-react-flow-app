@@ -1,4 +1,5 @@
 import {atom} from "jotai";
+import { nanoid } from "nanoid"
 import {atomWithStorage, createJSONStorage} from "jotai/utils";
 import {
   type Edge,
@@ -71,14 +72,36 @@ const createSafeStorage = <T>() => {
               "⚠️ localStorage の容量が上限に達しました。古い履歴を削除します。"
             );
 
-            // 履歴をクリアして再試行
-            storage.removeItem(key);
+            // 古い履歴をクリアして再試行
+            try {
+              const existing = storage.getItem(key);
+              if (existing) {
+                const parsed = JSON.parse(existing);
+                if (parsed.past && Array.isArray(parsed.past)) {
+                  // 古い履歴を削除して半分だけ残す
+                  parsed.past = parsed.past.slice(-10);
+                }
+                // future も必要に応じてトリミング（例: 最新5件残す）
+                if (parsed.future && Array.isArray(parsed.future)) {
+                  parsed.future = parsed.future.slice(0, 5);
+                }
+                storage.setItem(key, JSON.stringify(parsed));
+                console.info("✓ 古い履歴を間引いて保存しました。");
+                return;
+              }
+            } catch (err) {
+              console.warn("履歴のトリミングに失敗しました。履歴をクリアします。", err);
+              storage.removeItem(key);
+            }
+      
+            // 最終手段：履歴を全クリアして再試行
             try {
               storage.setItem(key, JSON.stringify(value));
               console.info("✓ 履歴をクリアして保存しました。");
             } catch (retryError) {
               console.error("❌ 履歴の保存に失敗しました:", retryError);
               // ユーザーに通知する場合はここで実装
+              // TODO: alert 通知を shadcn/ui の Toast に置き換え
               alert('履歴の保存に失敗しました。ブラウザのストレージを確認してください。');
             }
           } else {
@@ -239,8 +262,7 @@ export const connectAtom = atom(null, (_, set, connection: Connection) => {
 export const addChildNodeAtom = atom(null, (get, set, parentNode: Node) => {
   set(saveToHistoryAtom); // 履歴に保存
 
-  const nodes = get(nodesAtom);
-  const newNodeId = `node_${nodes.length + 1}`; // id はユニークなもの
+  const newNodeId = `node_${nanoid(6)}`
   const parentPosition = parentNode.position; // 親ノードのポジションを基準に配置
 
   // 新しいノードを親の右下に配置
@@ -254,7 +276,7 @@ export const addChildNodeAtom = atom(null, (get, set, parentNode: Node) => {
     },
   };
 
-  set(nodesAtom, [...nodes, newNode]);
+  set(nodesAtom, [...get(nodesAtom), newNode]);
 
   // 親から新しいノードへのエッジを作成
   const newEdge = {
@@ -318,16 +340,7 @@ export const addTextBlockAtom = atom(null, (get, set, text: string) => {
 
   const nodes = get(nodesAtom);
  
-  // 既存の最大IDを取得してインクリメント（重複を防ぐ）
-  const maxId = nodes.reduce((max, node) => {
-    const match = node.id.match(/^node_(\d+)$/);
-    if (match) {
-      const id = parseInt(match[1], 10);
-      return Math.max(max, id);
-    }
-    return max;
-  }, 0);
-  const newNodeId = `node_${maxId + 1}`;
+  const newNodeId = `node_${nanoid(6)}`
 
   // 既存のノードと重ならない位置を見つける
   const newNode = {
