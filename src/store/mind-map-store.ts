@@ -50,7 +50,7 @@ type HistoryState = {
 };
 
 // localStorage用のエラーハンドリング付きカスタムストレージ
-const createSafeStorage = <T>() => {
+const createSafeStorage = <T,>() => {
   return createJSONStorage<T>(() => {
     const storage = localStorage;
     return {
@@ -67,47 +67,18 @@ const createSafeStorage = <T>() => {
         try {
           storage.setItem(key, JSON.stringify(value));
         } catch (e) {
-          if (e instanceof DOMException && e.name === "QuotaExceededError") {
-            console.warn(
-              "⚠️ localStorage の容量が上限に達しました。古い履歴を削除します。"
-            );
-
-            // 古い履歴をクリアして再試行
-            try {
-              const existing = storage.getItem(key);
-              if (existing) {
-                const parsed = JSON.parse(existing);
-                if (parsed.past && Array.isArray(parsed.past)) {
-                  // 古い履歴を削除して半分だけ残す
-                  parsed.past = parsed.past.slice(-10);
-                }
-                // future も必要に応じてトリミング（例: 最新5件残す）
-                if (parsed.future && Array.isArray(parsed.future)) {
-                  parsed.future = parsed.future.slice(0, 5);
-                }
-                storage.setItem(key, JSON.stringify(parsed));
-                try {
-                  storage.setItem(key, JSON.stringify(value));
-                  console.info("✓ 古い履歴を削除して新しい値を保存しました。");
-                  return;
-                } catch (err) {
-                  console.error("❌ 新しい履歴の保存に失敗しました:", err);
-                }
-              }
-            } catch (err) {
-              console.warn("履歴のトリミングに失敗しました。履歴をクリアします。", err);
-              storage.removeItem(key);
-            }
-      
-            // 最終手段：履歴を全クリアして再試行
+          if (e instanceof DOMException && e.name === 'QuotaExceededError') {
+            console.warn('⚠️ localStorage の容量が上限に達しました。古い履歴を削除します。');
+            
+            // 履歴をクリアして再試行
+            storage.removeItem(key);
             try {
               storage.setItem(key, JSON.stringify(value));
-              console.info("✓ 履歴をクリアして保存しました。");
+              console.info('✓ 履歴をクリアして保存しました。');
             } catch (retryError) {
-              console.error("❌ 履歴の保存に失敗しました:", retryError);
+              console.error('❌ 履歴の保存に失敗しました:', retryError);
               // ユーザーに通知する場合はここで実装
-              // TODO: alert 通知を shadcn/ui の Toast に置き換え
-              alert('履歴の保存に失敗しました。ブラウザのストレージを確認してください。');
+              // alert('履歴の保存に失敗しました。ブラウザのストレージを確認してください。');
             }
           } else {
             console.error(`履歴の保存に失敗しました (${key}):`, e);
