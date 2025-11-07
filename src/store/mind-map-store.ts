@@ -48,17 +48,17 @@ type HistoryState = {
   edges: Edge[];
 };
 
-// 履歴管理
-export const historyAtom = atom<{
+// 履歴管理 - ローカルストレージに永続化
+export const historyAtom = atomWithStorage<{
   past: HistoryState[];
   future: HistoryState[];
-}>({
+}>('mindmap-history', {
   past: [],
   future: [],
 });
 
 // 現在の状態を履歴に保存
-const MAX_HISTORY = 50; // 最大50件
+const MAX_HISTORY = 20; // 最大20件
 export const saveToHistoryAtom = atom(null, (get, set) => {
   const currentNodes = get(nodesAtom);
   const currentEdges = get(edgesAtom);
