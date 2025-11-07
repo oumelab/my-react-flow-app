@@ -86,8 +86,13 @@ const createSafeStorage = <T>() => {
                   parsed.future = parsed.future.slice(0, 5);
                 }
                 storage.setItem(key, JSON.stringify(parsed));
-                console.info("✓ 古い履歴を間引いて保存しました。");
-                return;
+                try {
+                  storage.setItem(key, JSON.stringify(value));
+                  console.info("✓ 古い履歴を削除して新しい値を保存しました。");
+                  return;
+                } catch (err) {
+                  console.error("❌ 新しい履歴の保存に失敗しました:", err);
+                }
               }
             } catch (err) {
               console.warn("履歴のトリミングに失敗しました。履歴をクリアします。", err);
