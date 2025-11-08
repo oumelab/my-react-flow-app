@@ -256,7 +256,7 @@ export const addChildNodeAtom = atom(null, (get, set, parentNode: Node) => {
 
   // 親から新しいノードへのエッジを作成
   const newEdge = {
-    id: `edge_${parentNode.id}_${newNodeId}`,
+    id: `edge_${nanoid(6)}`,
     source: parentNode.id,
     target: newNodeId,
     animated: true,
