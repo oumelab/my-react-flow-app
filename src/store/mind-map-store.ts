@@ -49,6 +49,9 @@ type HistoryState = {
   edges: Edge[];
 };
 
+// 履歴を最大20件に制限（永続化ファイルも同じ上限に揃える）
+const MAX_HISTORY = 20;
+
 // localStorage用のエラーハンドリング付きカスタムストレージ
 const createSafeStorage = () => {
   // HistoryState の構造を検証するヘルパー関数
@@ -83,7 +86,10 @@ const createSafeStorage = () => {
           parsed.past.every(isValidHistoryState) &&
           parsed.future.every(isValidHistoryState)
         ) {
-          return parsed;
+          // 読み込み時に上限を適用
+          const past = parsed.past.slice(-MAX_HISTORY);
+          const future = parsed.future.slice(0, MAX_HISTORY);
+          return { past, future };
         }
         console.warn(`⚠️ 履歴データの構造が不正です (${key})。初期化します。`);
         return initialValue;
@@ -143,7 +149,6 @@ export const historyAtom = atomWithStorage<{
 );
 
 // 現在の状態を履歴に保存
-const MAX_HISTORY = 20; // 最大20件（永続化により削減）
 export const saveToHistoryAtom = atom(null, (get, set) => {
   const currentNodes = get(nodesAtom);
   const currentEdges = get(edgesAtom);
@@ -155,7 +160,7 @@ export const saveToHistoryAtom = atom(null, (get, set) => {
   ];
 
   set(historyAtom, {
-    past: newPast.slice(-MAX_HISTORY), // 上限を超えたら古いものを削除
+    past: newPast.slice(-MAX_HISTORY), // 既存のMAX_HISTORYを超えたら古いものを削除
     future: [], // 新しい操作で future をクリア
   });
 });
