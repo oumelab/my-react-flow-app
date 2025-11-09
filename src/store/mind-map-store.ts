@@ -96,8 +96,8 @@ const createSafeStorage = <T>() => {
               console.info("✓ 履歴をクリアして保存しました。");
             } catch (retryError) {
               console.error("❌ 履歴の保存に失敗しました:", retryError);
-              // ユーザーに通知する場合はここで実装
-              // alert('履歴の保存に失敗しました。ブラウザのストレージを確認してください。');
+              // TODO: ユーザーへの通知を実装 - shadcn/ui Sonner など
+              // 参考: alert('履歴の保存に失敗しました。ブラウザのストレージを確認してください。');
             }
           } else {
             console.error(`履歴の保存に失敗しました (${key}):`, e);
