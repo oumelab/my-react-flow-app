@@ -1,23 +1,24 @@
-import { atom } from "jotai";
-import { atomWithStorage } from "jotai/utils";
 import {
+  addEdge,
+  applyEdgeChanges,
+  applyNodeChanges,
+  type Connection,
   type Edge,
+  type EdgeChange,
   type Node,
   type NodeChange,
-  applyNodeChanges,
-  applyEdgeChanges,
-  addEdge,
-  type EdgeChange,
-  type Connection,
 } from "@xyflow/react";
+import { atom } from "jotai";
+import { atomWithStorage } from "jotai/utils";
+import { nanoid } from "nanoid";
 
 // 初期ノード
 const initialNodes: Node[] = [
   {
     id: "root",
     type: "mindMapNode",
-    data: { label: "Main Idea" },
-    position: { x: 250, y: 150 },
+    data: {label: "Main Idea"},
+    position: {x: 250, y: 150},
   },
 ];
 
@@ -48,26 +49,118 @@ type HistoryState = {
   edges: Edge[];
 };
 
-// 履歴管理
-export const historyAtom = atom<{
+// 履歴を最大20件に制限（永続化ファイルも同じ上限に揃える）
+const MAX_HISTORY = 20;
+
+// localStorage用のエラーハンドリング付きカスタムストレージ
+const createSafeStorage = () => {
+  // HistoryState の構造を検証するヘルパー関数
+  const isValidHistoryState = (state: unknown): state is HistoryState => {
+    if (!state || typeof state !== "object") return false;
+    const candidate = state as Record<string, unknown>; 
+
+    return (
+      "nodes" in candidate &&
+      "edges" in candidate &&
+      Array.isArray(candidate.nodes) &&
+      Array.isArray(candidate.edges)
+    );
+  };
+
+  return {
+    getItem: (
+      key: string,
+      initialValue: {past: HistoryState[]; future: HistoryState[]}
+    ) => {
+      try {
+        const value = localStorage.getItem(key);
+        if (!value) return initialValue;
+
+        const parsed = JSON.parse(value);
+        // 構造の検証（多層バリデーション）
+        if (
+          parsed &&
+          typeof parsed === "object" &&
+          Array.isArray(parsed.past) &&
+          Array.isArray(parsed.future) &&
+          parsed.past.every(isValidHistoryState) &&
+          parsed.future.every(isValidHistoryState)
+        ) {
+          // 読み込み時に上限を適用
+          const past = parsed.past.slice(-MAX_HISTORY);
+          const future = parsed.future.slice(0, MAX_HISTORY);
+          return { past, future };
+        }
+        console.warn(`⚠️ 履歴データの構造が不正です (${key})。初期化します。`);
+        return initialValue;
+      } catch (e) {
+        console.error(`履歴の読み込みに失敗しました (${key}):`, e);
+        return initialValue;
+      }
+    },
+    setItem: (
+      key: string,
+      value: {past: HistoryState[]; future: HistoryState[]}
+    ) => {
+      try {
+        localStorage.setItem(key, JSON.stringify(value));
+      } catch (e) {
+        if (e instanceof DOMException && e.name === "QuotaExceededError") {
+          console.warn(
+            "⚠️ localStorage の容量が上限に達しました。古い履歴を削除します。"
+          );
+
+          // 履歴をクリアして再試行
+          localStorage.removeItem(key);
+          try {
+            localStorage.setItem(key, JSON.stringify(value));
+            console.info("✓ 履歴をクリアして保存しました。");
+          } catch (retryError) {
+            console.error("❌ 履歴の保存に失敗しました:", retryError);
+            // TODO: ユーザーへの通知を実装 - shadcn/ui Sonner など
+            // 参考: alert('履歴の保存に失敗しました。ブラウザのストレージを確認してください。');
+          }
+        } else {
+          console.error(`履歴の保存に失敗しました (${key}):`, e);
+        }
+      }
+    },
+    removeItem: (key: string) => {
+      try {
+        localStorage.removeItem(key);
+      } catch (e) {
+        console.error(`履歴の削除に失敗しました (${key}):`, e);
+      }
+    },
+  };
+};
+
+// 履歴管理 - ローカルストレージに永続化
+export const historyAtom = atomWithStorage<{
   past: HistoryState[];
   future: HistoryState[];
-}>({
-  past: [],
-  future: [],
-});
+}>(
+  "mindmap-history",
+  {
+    past: [],
+    future: [],
+  },
+  createSafeStorage()
+);
 
 // 現在の状態を履歴に保存
-const MAX_HISTORY = 50; // 最大50件
 export const saveToHistoryAtom = atom(null, (get, set) => {
   const currentNodes = get(nodesAtom);
   const currentEdges = get(edgesAtom);
   const history = get(historyAtom);
-  
-  const newPast = [...history.past, { nodes: [...currentNodes], edges: [...currentEdges] }];
-  
+
+  const newPast = [
+    ...history.past,
+    {nodes: [...currentNodes], edges: [...currentEdges]},
+  ];
+
   set(historyAtom, {
-    past: newPast.slice(-MAX_HISTORY), // 上限を超えたら古いものを削除
+    past: newPast.slice(-MAX_HISTORY), // 既存のMAX_HISTORYを超えたら古いものを削除
     future: [], // 新しい操作で future をクリア
   });
 });
@@ -75,17 +168,17 @@ export const saveToHistoryAtom = atom(null, (get, set) => {
 // Undo
 export const undoAtom = atom(null, (get, set) => {
   const history = get(historyAtom);
-  
+
   if (history.past.length === 0) return;
-  
+
   const currentState = {
     nodes: get(nodesAtom),
     edges: get(edgesAtom),
   };
-  
+
   const previousState = history.past[history.past.length - 1];
   const newPast = history.past.slice(0, -1);
-  
+
   set(nodesAtom, previousState.nodes);
   set(edgesAtom, previousState.edges);
   set(historyAtom, {
@@ -97,17 +190,17 @@ export const undoAtom = atom(null, (get, set) => {
 // Redo
 export const redoAtom = atom(null, (get, set) => {
   const history = get(historyAtom);
-  
+
   if (history.future.length === 0) return;
-  
+
   const currentState = {
     nodes: get(nodesAtom),
     edges: get(edgesAtom),
   };
-  
+
   const nextState = history.future[0];
   const newFuture = history.future.slice(1);
-  
+
   set(nodesAtom, nextState.nodes);
   set(edgesAtom, nextState.edges);
   set(historyAtom, {
@@ -120,24 +213,23 @@ export const redoAtom = atom(null, (get, set) => {
 export const canUndoAtom = atom((get) => get(historyAtom).past.length > 0);
 export const canRedoAtom = atom((get) => get(historyAtom).future.length > 0);
 
-
 // ドラッグ中のノードを追跡
 const draggingNodesAtom = atom<Set<string>>(new Set<string>());
 
 // ノードを更新するアトム ... 変更があったノードを更新
 export const nodesChangeAtom = atom(null, (get, set, changes: NodeChange[]) => {
-
   const draggingNodes = get(draggingNodesAtom);
 
-   // ドラッグ開始を検出（dragging=true で、まだ追跡されていないノード）
-   const hasDragStart = changes.some(
-    (c) => c.type === 'position' && 
-           'dragging' in c && 
-           c.dragging === true && 
-           'id' in c && 
-           !draggingNodes.has(c.id)
+  // ドラッグ開始を検出（dragging=true で、まだ追跡されていないノード）
+  const hasDragStart = changes.some(
+    (c) =>
+      c.type === "position" &&
+      "dragging" in c &&
+      c.dragging === true &&
+      "id" in c &&
+      !draggingNodes.has(c.id)
   );
-  
+
   // ドラッグ開始時に履歴保存（変更前の状態を保存）
   if (hasDragStart) {
     set(saveToHistoryAtom);
@@ -145,8 +237,8 @@ export const nodesChangeAtom = atom(null, (get, set, changes: NodeChange[]) => {
 
   // ドラッグ状態を更新
   const newDraggingNodes = new Set(draggingNodes);
-  changes.forEach(c => {
-    if (c.type === 'position' && 'dragging' in c && 'id' in c) {
+  changes.forEach((c) => {
+    if (c.type === "position" && "dragging" in c && "id" in c) {
       if (c.dragging) {
         newDraggingNodes.add(c.id);
       } else {
@@ -168,11 +260,12 @@ export const edgesChangeAtom = atom(null, (get, set, changes: EdgeChange[]) => {
 export const connectAtom = atom(null, (_, set, connection: Connection) => {
   set(saveToHistoryAtom); // 履歴に保存
   set(edgesAtom, (eds) =>
-    addEdge( // addEdge = React Flow の関数（何と何が繋がれたか取得）
+    addEdge(
+      // addEdge = React Flow の関数（何と何が繋がれたか取得）
       {
         ...connection,
         animated: true,
-        style: { stroke: "#ccc", strokeWidth: 3 },
+        style: {stroke: "#ccc", strokeWidth: 3},
       },
       eds
     )
@@ -183,30 +276,29 @@ export const connectAtom = atom(null, (_, set, connection: Connection) => {
 export const addChildNodeAtom = atom(null, (get, set, parentNode: Node) => {
   set(saveToHistoryAtom); // 履歴に保存
 
-  const nodes = get(nodesAtom);
-  const newNodeId = `node_${nodes.length + 1}`; // id はユニークなもの
+  const newNodeId = `node_${nanoid(6)}`;
   const parentPosition = parentNode.position; // 親ノードのポジションを基準に配置
 
   // 新しいノードを親の右下に配置
   const newNode = {
     id: newNodeId,
     type: "mindMapNode",
-    data: { label: "New Idea" },
+    data: {label: "New Idea"},
     position: {
       x: parentPosition.x + 100,
       y: parentPosition.y + 100,
     },
   };
 
-  set(nodesAtom, [...nodes, newNode]);
+  set(nodesAtom, [...get(nodesAtom), newNode]);
 
   // 親から新しいノードへのエッジを作成
   const newEdge = {
-    id: `edge_${parentNode.id}_${newNodeId}`,
+    id: `edge_${nanoid(6)}`,
     source: parentNode.id,
     target: newNodeId,
     animated: true,
-    style: { stroke: "#ccc", strokeWidth: 3 },
+    style: {stroke: "#ccc", strokeWidth: 3},
   };
 
   set(edgesAtom, [...get(edgesAtom), newEdge]);
@@ -215,7 +307,7 @@ export const addChildNodeAtom = atom(null, (get, set, parentNode: Node) => {
 // ノードラベルを更新するアトム
 export const updateNodeLabelAtom = atom(
   null,
-  (get, set, { nodeId, newLabel }: { nodeId: string; newLabel: string }) => {
+  (get, set, {nodeId, newLabel}: {nodeId: string; newLabel: string}) => {
     set(saveToHistoryAtom); // 履歴に保存
 
     set(
@@ -249,7 +341,8 @@ export const deleteNodeAtom = atom(null, (get, set, nodeId: string) => {
   );
   set(
     edgesAtom,
-    get(edgesAtom).filter( // 結ばれている線があったら線も一緒に削除
+    get(edgesAtom).filter(
+      // 結ばれている線があったら線も一緒に削除
       (edge) => edge.source !== nodeId && edge.target !== nodeId
     )
   );
@@ -260,13 +353,14 @@ export const addTextBlockAtom = atom(null, (get, set, text: string) => {
   set(saveToHistoryAtom); // 履歴に保存
 
   const nodes = get(nodesAtom);
-  const newNodeId = `node_${nodes.length + 1}`;
+
+  const newNodeId = `node_${nanoid(6)}`;
 
   // 既存のノードと重ならない位置を見つける
   const newNode = {
     id: newNodeId,
     type: "mindMapNode",
-    data: { label: text },
+    data: {label: text},
     position: {
       x: Math.random() * 300 + 100,
       y: Math.random() * 300 + 100,
