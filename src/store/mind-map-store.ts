@@ -51,6 +51,17 @@ type HistoryState = {
 
 // localStorage用のエラーハンドリング付きカスタムストレージ
 const createSafeStorage = <T>() => {
+  // HistoryState の構造を検証するヘルパー関数
+  const isValidHistoryState = (state: unknown): state is HistoryState => {
+    return (
+      state !== null &&
+      typeof state === "object" &&
+      "nodes" in state &&
+      "edges" in state &&
+      Array.isArray((state as Record<string, unknown>).nodes) &&
+      Array.isArray((state as Record<string, unknown>).edges)
+    );
+  };
   return createJSONStorage<T>(() => {
     const storage = localStorage;
     return {
@@ -61,12 +72,14 @@ const createSafeStorage = <T>() => {
 
           const parsed = JSON.parse(value);
 
-          // 構造の検証
+          // 構造の検証（多層バリデーション）
           if (
             parsed &&
             typeof parsed === "object" &&
             Array.isArray(parsed.past) &&
-            Array.isArray(parsed.future)
+            Array.isArray(parsed.future) &&
+            parsed.past.every(isValidHistoryState) &&
+            parsed.future.every(isValidHistoryState)
           ) {
             return parsed;
           }
