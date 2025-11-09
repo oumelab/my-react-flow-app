@@ -1,16 +1,16 @@
-import {atom} from "jotai";
-import {nanoid} from "nanoid";
-import {atomWithStorage, createJSONStorage} from "jotai/utils";
 import {
+  addEdge,
+  applyEdgeChanges,
+  applyNodeChanges,
+  type Connection,
   type Edge,
+  type EdgeChange,
   type Node,
   type NodeChange,
-  applyNodeChanges,
-  applyEdgeChanges,
-  addEdge,
-  type EdgeChange,
-  type Connection,
 } from "@xyflow/react";
+import { atom } from "jotai";
+import { atomWithStorage } from "jotai/utils";
+import { nanoid } from "nanoid";
 
 // 初期ノード
 const initialNodes: Node[] = [
@@ -50,82 +50,83 @@ type HistoryState = {
 };
 
 // localStorage用のエラーハンドリング付きカスタムストレージ
-const createSafeStorage = <T>() => {
+const createSafeStorage = () => {
   // HistoryState の構造を検証するヘルパー関数
   const isValidHistoryState = (state: unknown): state is HistoryState => {
+    if (!state || typeof state !== "object") return false;
+    const candidate = state as Record<string, unknown>; 
+
     return (
-      state !== null &&
-      typeof state === "object" &&
-      "nodes" in state &&
-      "edges" in state &&
-      Array.isArray((state as Record<string, unknown>).nodes) &&
-      Array.isArray((state as Record<string, unknown>).edges)
+      "nodes" in candidate &&
+      "edges" in candidate &&
+      Array.isArray(candidate.nodes) &&
+      Array.isArray(candidate.edges)
     );
   };
-  return createJSONStorage<T>(() => {
-    const storage = localStorage;
-    return {
-      getItem: (key) => {
-        try {
-          const value = storage.getItem(key);
-          if (!value) return null;
 
-          const parsed = JSON.parse(value);
+  return {
+    getItem: (
+      key: string,
+      initialValue: {past: HistoryState[]; future: HistoryState[]}
+    ) => {
+      try {
+        const value = localStorage.getItem(key);
+        if (!value) return initialValue;
 
-          // 構造の検証（多層バリデーション）
-          if (
-            parsed &&
-            typeof parsed === "object" &&
-            Array.isArray(parsed.past) &&
-            Array.isArray(parsed.future) &&
-            parsed.past.every(isValidHistoryState) &&
-            parsed.future.every(isValidHistoryState)
-          ) {
-            return parsed;
-          }
-
+        const parsed = JSON.parse(value);
+        // 構造の検証（多層バリデーション）
+        if (
+          parsed &&
+          typeof parsed === "object" &&
+          Array.isArray(parsed.past) &&
+          Array.isArray(parsed.future) &&
+          parsed.past.every(isValidHistoryState) &&
+          parsed.future.every(isValidHistoryState)
+        ) {
+          return parsed;
+        }
+        console.warn(`⚠️ 履歴データの構造が不正です (${key})。初期化します。`);
+        return initialValue;
+      } catch (e) {
+        console.error(`履歴の読み込みに失敗しました (${key}):`, e);
+        return initialValue;
+      }
+    },
+    setItem: (
+      key: string,
+      value: {past: HistoryState[]; future: HistoryState[]}
+    ) => {
+      try {
+        localStorage.setItem(key, JSON.stringify(value));
+      } catch (e) {
+        if (e instanceof DOMException && e.name === "QuotaExceededError") {
           console.warn(
-            `⚠️ 履歴データの構造が不正です (${key})。初期化します。`
+            "⚠️ localStorage の容量が上限に達しました。古い履歴を削除します。"
           );
-          return null;
-        } catch (e) {
-          console.error(`履歴の読み込みに失敗しました (${key}):`, e);
-          return null;
-        }
-      },
-      setItem: (key, value) => {
-        try {
-          storage.setItem(key, JSON.stringify(value));
-        } catch (e) {
-          if (e instanceof DOMException && e.name === "QuotaExceededError") {
-            console.warn(
-              "⚠️ localStorage の容量が上限に達しました。古い履歴を削除します。"
-            );
 
-            // 履歴をクリアして再試行
-            storage.removeItem(key);
-            try {
-              storage.setItem(key, JSON.stringify(value));
-              console.info("✓ 履歴をクリアして保存しました。");
-            } catch (retryError) {
-              console.error("❌ 履歴の保存に失敗しました:", retryError);
-              // TODO: ユーザーへの通知を実装 - shadcn/ui Sonner など
-              // 参考: alert('履歴の保存に失敗しました。ブラウザのストレージを確認してください。');
-            }
-          } else {
-            console.error(`履歴の保存に失敗しました (${key}):`, e);
+          // 履歴をクリアして再試行
+          localStorage.removeItem(key);
+          try {
+            localStorage.setItem(key, JSON.stringify(value));
+            console.info("✓ 履歴をクリアして保存しました。");
+          } catch (retryError) {
+            console.error("❌ 履歴の保存に失敗しました:", retryError);
+            // TODO: ユーザーへの通知を実装 - shadcn/ui Sonner など
+            // 参考: alert('履歴の保存に失敗しました。ブラウザのストレージを確認してください。');
           }
+        } else {
+          console.error(`履歴の保存に失敗しました (${key}):`, e);
         }
-      },
-      removeItem: (key) => {
-        try {
-          storage.removeItem(key);
-        } catch (e) {
-          console.error(`履歴の削除に失敗しました (${key}):`, e);
-        }
-      },
-    };
-  });
+      }
+    },
+    removeItem: (key: string) => {
+      try {
+        localStorage.removeItem(key);
+      } catch (e) {
+        console.error(`履歴の削除に失敗しました (${key}):`, e);
+      }
+    },
+  };
 };
 
 // 履歴管理 - ローカルストレージに永続化
