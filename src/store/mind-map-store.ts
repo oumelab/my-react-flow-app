@@ -1,5 +1,5 @@
 import {atom} from "jotai";
-import { nanoid } from "nanoid"
+import {nanoid} from "nanoid";
 import {atomWithStorage, createJSONStorage} from "jotai/utils";
 import {
   type Edge,
@@ -50,14 +50,31 @@ type HistoryState = {
 };
 
 // localStorage用のエラーハンドリング付きカスタムストレージ
-const createSafeStorage = <T,>() => {
+const createSafeStorage = <T>() => {
   return createJSONStorage<T>(() => {
     const storage = localStorage;
     return {
       getItem: (key) => {
         try {
           const value = storage.getItem(key);
-          return value ? JSON.parse(value) : null;
+          if (!value) return null;
+
+          const parsed = JSON.parse(value);
+
+          // 構造の検証
+          if (
+            parsed &&
+            typeof parsed === "object" &&
+            Array.isArray(parsed.past) &&
+            Array.isArray(parsed.future)
+          ) {
+            return parsed;
+          }
+
+          console.warn(
+            `⚠️ 履歴データの構造が不正です (${key})。初期化します。`
+          );
+          return null;
         } catch (e) {
           console.error(`履歴の読み込みに失敗しました (${key}):`, e);
           return null;
@@ -67,16 +84,18 @@ const createSafeStorage = <T,>() => {
         try {
           storage.setItem(key, JSON.stringify(value));
         } catch (e) {
-          if (e instanceof DOMException && e.name === 'QuotaExceededError') {
-            console.warn('⚠️ localStorage の容量が上限に達しました。古い履歴を削除します。');
-            
+          if (e instanceof DOMException && e.name === "QuotaExceededError") {
+            console.warn(
+              "⚠️ localStorage の容量が上限に達しました。古い履歴を削除します。"
+            );
+
             // 履歴をクリアして再試行
             storage.removeItem(key);
             try {
               storage.setItem(key, JSON.stringify(value));
-              console.info('✓ 履歴をクリアして保存しました。');
+              console.info("✓ 履歴をクリアして保存しました。");
             } catch (retryError) {
-              console.error('❌ 履歴の保存に失敗しました:', retryError);
+              console.error("❌ 履歴の保存に失敗しました:", retryError);
               // ユーザーに通知する場合はここで実装
               // alert('履歴の保存に失敗しました。ブラウザのストレージを確認してください。');
             }
@@ -238,7 +257,7 @@ export const connectAtom = atom(null, (_, set, connection: Connection) => {
 export const addChildNodeAtom = atom(null, (get, set, parentNode: Node) => {
   set(saveToHistoryAtom); // 履歴に保存
 
-  const newNodeId = `node_${nanoid(6)}`
+  const newNodeId = `node_${nanoid(6)}`;
   const parentPosition = parentNode.position; // 親ノードのポジションを基準に配置
 
   // 新しいノードを親の右下に配置
@@ -315,8 +334,8 @@ export const addTextBlockAtom = atom(null, (get, set, text: string) => {
   set(saveToHistoryAtom); // 履歴に保存
 
   const nodes = get(nodesAtom);
- 
-  const newNodeId = `node_${nanoid(6)}`
+
+  const newNodeId = `node_${nanoid(6)}`;
 
   // 既存のノードと重ならない位置を見つける
   const newNode = {
